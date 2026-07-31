@@ -1,0 +1,1079 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: StudyCore API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: notes
+    description: Study notes management
+  - name: flashcards
+    description: AI-generated flashcard decks
+  - name: glossary
+    description: Inline glossary terms
+  - name: branches
+    description: AI-generated branch/mind-map trees
+  - name: search
+    description: Global search
+  - name: sets
+    description: Study sets (like Quizlet sets)
+  - name: ai
+    description: AI generation endpoints
+  - name: Storage
+    description: Object storage upload and serving endpoints
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── Notes ──────────────────────────────────────────────────────────────────
+  /notes:
+    get:
+      operationId: listNotes
+      tags: [notes]
+      summary: List all notes
+      parameters:
+        - name: subjectId
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Note"
+    post:
+      operationId: createNote
+      tags: [notes]
+      summary: Create a new note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteBody"
+      responses:
+        "201":
+          description: Note created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+
+  /notes/{id}:
+    get:
+      operationId: getNote
+      tags: [notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Note detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+    put:
+      operationId: updateNote
+      tags: [notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteBody"
+      responses:
+        "200":
+          description: Updated note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+    delete:
+      operationId: deleteNote
+      tags: [notes]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Flashcard Decks ────────────────────────────────────────────────────────
+  /flashcard-decks:
+    get:
+      operationId: listFlashcardDecks
+      tags: [flashcards]
+      summary: List all flashcard decks
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of decks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FlashcardDeck"
+    post:
+      operationId: createFlashcardDeck
+      tags: [flashcards]
+      summary: Create a flashcard deck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFlashcardDeckBody"
+      responses:
+        "201":
+          description: Deck created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlashcardDeck"
+
+  /flashcard-decks/{id}:
+    get:
+      operationId: getFlashcardDeck
+      tags: [flashcards]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deck with cards
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlashcardDeckDetail"
+    delete:
+      operationId: deleteFlashcardDeck
+      tags: [flashcards]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /flashcard-decks/{id}/cards:
+    get:
+      operationId: listFlashcards
+      tags: [flashcards]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cards in deck
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Flashcard"
+    post:
+      operationId: addFlashcard
+      tags: [flashcards]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFlashcardBody"
+      responses:
+        "201":
+          description: Card added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Flashcard"
+
+  # ── Glossary ───────────────────────────────────────────────────────────────
+  /glossary:
+    get:
+      operationId: listGlossaryTerms
+      tags: [glossary]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of glossary terms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GlossaryTerm"
+    post:
+      operationId: createGlossaryTerm
+      tags: [glossary]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGlossaryTermBody"
+      responses:
+        "201":
+          description: Term created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlossaryTerm"
+
+  /glossary/{id}:
+    put:
+      operationId: updateGlossaryTerm
+      tags: [glossary]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGlossaryTermBody"
+      responses:
+        "200":
+          description: Updated term
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlossaryTerm"
+    delete:
+      operationId: deleteGlossaryTerm
+      tags: [glossary]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Branch Trees ───────────────────────────────────────────────────────────
+  /branch-trees:
+    get:
+      operationId: listBranchTrees
+      tags: [branches]
+      responses:
+        "200":
+          description: List of branch trees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BranchTree"
+    post:
+      operationId: createBranchTree
+      tags: [branches]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBranchTreeBody"
+      responses:
+        "201":
+          description: Branch tree created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchTree"
+
+  /branch-trees/{id}:
+    get:
+      operationId: getBranchTree
+      tags: [branches]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Branch tree detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchTree"
+    delete:
+      operationId: deleteBranchTree
+      tags: [branches]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Study Sets ─────────────────────────────────────────────────────────────
+  /sets:
+    get:
+      operationId: listSets
+      tags: [sets]
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of study sets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudySet"
+    post:
+      operationId: createSet
+      tags: [sets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStudySetBody"
+      responses:
+        "201":
+          description: Set created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySet"
+
+  /sets/{id}:
+    get:
+      operationId: getSet
+      tags: [sets]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Study set detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySet"
+    delete:
+      operationId: deleteSet
+      tags: [sets]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Global Search ──────────────────────────────────────────────────────────
+  /search:
+    get:
+      operationId: globalSearch
+      tags: [search]
+      summary: Search across notes, flashcards, glossary, and sets
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [notes, flashcards, glossary, sets, all]
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+
+  # ── Dashboard Stats ────────────────────────────────────────────────────────
+  /stats/overview:
+    get:
+      operationId: getOverviewStats
+      tags: [notes]
+      summary: Dashboard overview stats
+      responses:
+        "200":
+          description: Overview stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverviewStats"
+
+  /stats/recent:
+    get:
+      operationId: getRecentActivity
+      tags: [notes]
+      summary: Recent activity feed
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  # ── AI Endpoints ───────────────────────────────────────────────────────────
+  /ai/generate-flashcards:
+    post:
+      operationId: generateFlashcards
+      tags: [ai]
+      summary: AI-generate flashcards from note content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateFlashcardsBody"
+      responses:
+        "200":
+          description: Generated flashcard deck
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlashcardDeckDetail"
+
+  /ai/generate-branch-tree:
+    post:
+      operationId: generateBranchTree
+      tags: [ai]
+      summary: AI-generate a branch/mind-map tree from note content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateBranchTreeBody"
+      responses:
+        "200":
+          description: Generated branch tree
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchTree"
+
+  /ai/define-term:
+    post:
+      operationId: defineTerm
+      tags: [ai]
+      summary: AI-define a glossary term
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DefineTermBody"
+      responses:
+        "200":
+          description: Term definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlossaryTerm"
+
+  /ai/summarize:
+    post:
+      operationId: summarizeNote
+      tags: [ai]
+      summary: AI-summarize note into bullet points
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SummarizeNoteBody"
+      responses:
+        "200":
+          description: Summary bullets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummaryResult"
+
+  # ── Storage ────────────────────────────────────────────────────────────────
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    # ── Notes ────────────────────────────────────────────────────────────────
+    Note:
+      type: object
+      required: [id, title, content, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        subject:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+        diagramUrl:
+          type: string
+        bulletPoints:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    CreateNoteBody:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        subject:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+        diagramUrl:
+          type: string
+
+    UpdateNoteBody:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        subject:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+        diagramUrl:
+          type: string
+        bulletPoints:
+          type: array
+          items:
+            type: string
+
+    # ── Flashcards ────────────────────────────────────────────────────────────
+    Flashcard:
+      type: object
+      required: [id, deckId, front, back]
+      properties:
+        id:
+          type: string
+        deckId:
+          type: string
+        front:
+          type: string
+        back:
+          type: string
+        hint:
+          type: string
+
+    FlashcardDeck:
+      type: object
+      required: [id, title, cardCount, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        cardCount:
+          type: integer
+        subject:
+          type: string
+        createdAt:
+          type: string
+
+    FlashcardDeckDetail:
+      type: object
+      required: [id, title, cards, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Flashcard"
+        createdAt:
+          type: string
+
+    CreateFlashcardDeckBody:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+
+    CreateFlashcardBody:
+      type: object
+      required: [front, back]
+      properties:
+        front:
+          type: string
+        back:
+          type: string
+        hint:
+          type: string
+
+    # ── Glossary ──────────────────────────────────────────────────────────────
+    GlossaryTerm:
+      type: object
+      required: [id, term, definition]
+      properties:
+        id:
+          type: string
+        term:
+          type: string
+        definition:
+          type: string
+        examples:
+          type: array
+          items:
+            type: string
+        relatedTerms:
+          type: array
+          items:
+            type: string
+        subject:
+          type: string
+
+    CreateGlossaryTermBody:
+      type: object
+      required: [term, definition]
+      properties:
+        term:
+          type: string
+        definition:
+          type: string
+        examples:
+          type: array
+          items:
+            type: string
+        relatedTerms:
+          type: array
+          items:
+            type: string
+        subject:
+          type: string
+
+    # ── Branch Trees ───────────────────────────────────────────────────────────
+    BranchNode:
+      type: object
+      required: [id, label]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchNode"
+
+    BranchTree:
+      type: object
+      required: [id, title, root, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        noteId:
+          type: string
+        root:
+          $ref: "#/components/schemas/BranchNode"
+        createdAt:
+          type: string
+
+    CreateBranchTreeBody:
+      type: object
+      required: [title, root]
+      properties:
+        title:
+          type: string
+        noteId:
+          type: string
+        root:
+          $ref: "#/components/schemas/BranchNode"
+
+    # ── Study Sets ─────────────────────────────────────────────────────────────
+    StudySet:
+      type: object
+      required: [id, title, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        termCount:
+          type: integer
+        createdAt:
+          type: string
+
+    CreateStudySetBody:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+
+    # ── Search ─────────────────────────────────────────────────────────────────
+    SearchResultItem:
+      type: object
+      required: [id, type, title, snippet]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [note, flashcard_deck, glossary_term, study_set]
+        title:
+          type: string
+        snippet:
+          type: string
+        subject:
+          type: string
+
+    SearchResults:
+      type: object
+      required: [query, results, total]
+      properties:
+        query:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResultItem"
+        total:
+          type: integer
+
+    # ── Stats ──────────────────────────────────────────────────────────────────
+    OverviewStats:
+      type: object
+      required: [noteCount, flashcardDeckCount, glossaryTermCount, studySetCount, branchTreeCount]
+      properties:
+        noteCount:
+          type: integer
+        flashcardDeckCount:
+          type: integer
+        glossaryTermCount:
+          type: integer
+        studySetCount:
+          type: integer
+        branchTreeCount:
+          type: integer
+        recentNotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+        topSubjects:
+          type: array
+          items:
+            type: object
+            required: [subject, count]
+            properties:
+              subject:
+                type: string
+              count:
+                type: integer
+
+    ActivityItem:
+      type: object
+      required: [id, type, title, action, timestamp]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [note, flashcard_deck, glossary_term, study_set, branch_tree]
+        title:
+          type: string
+        action:
+          type: string
+          enum: [created, updated, deleted]
+        timestamp:
+          type: string
+
+    # ── AI ─────────────────────────────────────────────────────────────────────
+    GenerateFlashcardsBody:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        title:
+          type: string
+        count:
+          type: integer
+          default: 10
+
+    GenerateBranchTreeBody:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        title:
+          type: string
+        noteId:
+          type: string
+
+    DefineTermBody:
+      type: object
+      required: [term]
+      properties:
+        term:
+          type: string
+        context:
+          type: string
+
+    SummarizeNoteBody:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        noteId:
+          type: string
+
+    SummaryResult:
+      type: object
+      required: [bullets]
+      properties:
+        bullets:
+          type: array
+          items:
+            type: string
+        noteId:
+          type: string
+
+    # ── Storage ────────────────────────────────────────────────────────────────
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/UploadUrlRequest"
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
